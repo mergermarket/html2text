@@ -178,11 +178,12 @@ func (ctx *textifyTraverseCtx) handleElementNode(node *html.Node) error {
 					switch row.DataAtom {
 					default:
 					case atom.Td:
-						firstChild := row.FirstChild
-						switch firstChild.Type {
+						column := row.FirstChild
+						switch column.Type {
 						default:
 						case html.TextNode:
-							contents := strings.Trim(spacingRe.ReplaceAllString(firstChild.Data, " "), " ")
+							contents := strings.Trim(spacingRe.ReplaceAllString(column.Data, " "), " ")
+							contents = strings.TrimSpace(contents)
 							if colWidth, exists := maxColumnWidths[currentRow]; exists {
 								if colWidth < len(contents) {
 									maxColumnWidths[currentRow] = len(contents)
@@ -214,7 +215,7 @@ func (ctx *textifyTraverseCtx) handleElementNode(node *html.Node) error {
 								ctx.traverse(column)
 							case html.TextNode:
 								contents := strings.Trim(spacingRe.ReplaceAllString(column.Data, " "), " ")
-
+								contents = strings.TrimSpace(contents)
 								if len(maxColumnWidths) > 1 {
 									padding := maxColumnWidths[currentRow] - len(contents)
 
