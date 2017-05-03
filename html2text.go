@@ -9,6 +9,7 @@ import (
 
 	"github.com/ssor/bom"
 
+	"fmt"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
@@ -122,7 +123,7 @@ func (ctx *textifyTraverseCtx) handleElementNode(node *html.Node) error {
 
 		return ctx.emit("\n")
 
-	case atom.B, atom.Strong:
+	case atom.B, atom.Strong, atom.Thead:
 		subCtx := textifyTraverseCtx{}
 		subCtx.endsWithSpace = true
 		if err := subCtx.traverseChildren(node); err != nil {
@@ -162,12 +163,81 @@ func (ctx *textifyTraverseCtx) handleElementNode(node *html.Node) error {
 
 		return ctx.emit("\n\n")
 
-	case atom.Tr:
-		if err := ctx.traverseChildren(node); err != nil {
-			return err
+	case atom.Tbody:
+		// data structure that holds the max length of each column
+		maxColumnWidths := make(map[int]int)
+		// traverse each row and column, updating map as neccessary
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			switch c.DataAtom {
+			default:
+			case atom.Tr:
+				currentRow := 0
+
+				for row := c.FirstChild; row != nil; row = row.NextSibling {
+
+					switch row.DataAtom {
+					default:
+					case atom.Td:
+						firstChild := row.FirstChild
+						switch firstChild.Type {
+						default:
+						case html.TextNode:
+							contents := strings.Trim(spacingRe.ReplaceAllString(firstChild.Data, " "), " ")
+							if colWidth, exists := maxColumnWidths[currentRow]; exists {
+								if colWidth < len(contents) {
+									maxColumnWidths[currentRow] = len(contents)
+								}
+							} else {
+								maxColumnWidths[currentRow] = len(contents)
+							}
+						}
+						currentRow++
+
+					}
+				}
+			}
 		}
 
-		return ctx.emit("\n")
+		for c := node.FirstChild; c != nil; c = c.NextSibling {
+			switch c.DataAtom {
+			default:
+			case atom.Tr:
+				currentRow := 0
+				ctx.emit("\n")
+				for row := c.FirstChild; row != nil; row = row.NextSibling {
+					switch row.DataAtom {
+					default:
+					case atom.Td, atom.Th:
+						for column := row.FirstChild; column != nil; column = column.NextSibling {
+							switch column.Type {
+							default:
+								ctx.traverse(column)
+							case html.TextNode:
+								contents := strings.Trim(spacingRe.ReplaceAllString(column.Data, " "), " ")
+
+								if len(maxColumnWidths) > 1 {
+									padding := maxColumnWidths[currentRow] - len(contents)
+
+									var spaces string
+									for i := 0; i < padding+4; i++ {
+										spaces += " "
+									}
+									ctx.emit(fmt.Sprintf("%s%s ", contents, spaces))
+								} else {
+									ctx.emit(contents)
+								}
+
+								currentRow++
+
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return nil
 
 	case atom.Style, atom.Script, atom.Head:
 		// Ignore the subtree
