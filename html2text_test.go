@@ -141,7 +141,7 @@ func TestTables(t *testing.T) {
 		},
 		{
 			"<table><tr><td>cell1</td><td>cell2</td></tr></table>",
-			"cell1 cell2",
+			"cell1     cell2",
 		},
 		{
 			"<table><tr><td>row1</td></tr><tr><td>row2</td></tr></table>",
@@ -152,7 +152,7 @@ func TestTables(t *testing.T) {
 			   <tr><td>cell1-1</td><td>cell1-2</td></tr>
 			   <tr><td>cell2-1</td><td>cell2-2</td></tr>
 			</table>`,
-			"cell1-1 cell1-2\ncell2-1 cell2-2",
+			"cell1-1     cell1-2     \ncell2-1     cell2-2",
 		},
 		{
 			"_<table><tr><td>cell</td></tr></table>_",
