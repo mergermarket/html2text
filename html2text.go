@@ -10,6 +10,7 @@ import (
 	"github.com/ssor/bom"
 
 	"fmt"
+
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
@@ -179,6 +180,10 @@ func (ctx *textifyTraverseCtx) handleElementNode(node *html.Node) error {
 					default:
 					case atom.Td:
 						column := row.FirstChild
+						if column == nil {
+							continue
+						}
+
 						switch column.Type {
 						default:
 						case html.TextNode:
